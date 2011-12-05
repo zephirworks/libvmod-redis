@@ -81,6 +81,18 @@ redis_common(struct sess *sp, struct vmod_priv *priv, const char *command)
 	}
 
 	reply = redisCommand(c, command);
+	if (c->err == REDIS_ERR_EOF) {
+		c = redisConnect(cfg->host, cfg->port);
+		if (c->err) {
+			LOG_E("redis error (reconnect): %s\n", c->errstr);
+			redisFree(c);
+		} else {
+			redisFree(pthread_getspecific(redis_key));
+			(void)pthread_setspecific(redis_key, c);
+
+			reply = redisCommand(c, command);
+		}
+	}
 	if (reply == NULL) {
 		LOG_E("redis error (command): err=%d errstr=%s\n", c->err, c->errstr);
 		return NULL;
