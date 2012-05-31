@@ -14,6 +14,17 @@ So far the module builds and runs on FreeBSD--on other platforms, you are on you
 Functions and procedures
 ------------------------
 
+*redis.init_redis(host, port, timeout_ms)*
+
+Use the redis server at the given _host_ and _port_ with a timeout
+of _timeout__ms_ milliseconds.
+If _port_ is less than or equal to zero, the default port of 6379 is used.
+If _timeout__ms_ is less than or equal to zero, a default timeout of 200ms is used.
+
+This function is supposed to be called from the Varnish subroutine _vcl__init_.
+If the call is left out, the module will attempt to connect to the Redis server
+at 127.0.0.1:6379 with a connect timeout of 200ms.
+
 *redis.send(command)*
 
 Sends the given _command_ to redis; the response will be ignored.
