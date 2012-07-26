@@ -152,6 +152,32 @@ vmod_send(struct sess *sp, struct vmod_priv *priv, const char *command)
 }
 
 const char *
+arr_to_str(redisReply *reply)
+{
+	int i = 0;
+	int len = 0;
+	const char *ret = NULL;
+	char *digits;
+
+	digits = malloc(reply->elements*sizeof(int));
+
+	for(i;i<reply->elements;i++) {
+		if( i%2 != 0 ) {
+			strcat(digits,reply->element[i]->str);
+			strcat(digits,":");
+		} 
+	}
+
+	len = strlen(digits);
+	digits[len-1] = '\0';
+
+	ret = strdup(digits);
+	free(digits);
+
+	return ret;
+}
+
+const char *
 vmod_call(struct sess *sp, struct vmod_priv *priv, const char *command)
 {
 	redisReply *reply = NULL;
@@ -183,7 +209,7 @@ vmod_call(struct sess *sp, struct vmod_priv *priv, const char *command)
 		ret = strdup(reply->str);
 		break;
 	case REDIS_REPLY_ARRAY:
-		ret = strdup("array");
+		ret = arr_to_str(reply);
 		break;
 	default:
 		ret = strdup("unexpected");
