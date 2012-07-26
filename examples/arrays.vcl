@@ -59,7 +59,7 @@ sub vcl_recv {
 
   if( req.http.redis_key ) {
 	# Read type param
-	et req.http.htype = regsub(req.http.redis_key, "^(r|d):(.*)", "\1");
+	set req.http.htype = regsub(req.http.redis_key, "^(r|d):(.*)", "\1");
 
 	# Read the domain backend from redis
    if( req.http.htype == "d" ) {
