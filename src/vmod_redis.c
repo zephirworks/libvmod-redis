@@ -45,6 +45,13 @@ vmod_log(struct sess *sp, const char *fmt, ...)
 }
 
 static void
+free_config(config_t *cfg)
+{
+	free(cfg->host);
+	free(cfg);
+}
+
+static void
 make_key()
 {
 	(void)pthread_key_create(&redis_key, NULL);
@@ -87,7 +94,7 @@ init_function(struct vmod_priv *priv, const struct VCL_conf *conf)
 
 	if (priv->priv == NULL) {
 		priv->priv = make_config("127.0.0.1", 6379, REDIS_TIMEOUT_MS);
-		priv->free = free;
+		priv->free = (vmod_priv_free_f *)free_config;
 	}
 
 	return (0);
@@ -100,8 +107,7 @@ vmod_init_redis(struct sess *sp, struct vmod_priv *priv, const char *host, int p
 
 	priv->priv = make_config(host, port, timeout_ms);
 	if(priv->priv && old_cfg) {
-		free(old_cfg->host);
-		free(old_cfg);
+		free_config(old_cfg);
 	}
 }
 
@@ -165,13 +171,14 @@ vmod_call(struct sess *sp, struct vmod_priv *priv, const char *command)
 
 	switch (reply->type) {
 	case REDIS_REPLY_STATUS:
-		ret = strdup(reply->str);
+		ret = WS_Dup(sp->ws, reply->str);
 		break;
 	case REDIS_REPLY_ERROR:
-		ret = strdup(reply->str);
+		ret = WS_Dup(sp->ws, reply->str);
 		break;
 	case REDIS_REPLY_INTEGER:
-		digits = malloc(21); /* sizeof(long long) == 8; 20 digits + NUL */
+		digits = WS_Alloc(sp->ws, 21);
+                                   /* sizeof(long long) == 8; 20 digits + NUL */
 		if(digits)
 			sprintf(digits, "%lld", reply->integer);
 		ret = digits;
@@ -180,13 +187,13 @@ vmod_call(struct sess *sp, struct vmod_priv *priv, const char *command)
 		ret = NULL;
 		break;
 	case REDIS_REPLY_STRING:
-		ret = strdup(reply->str);
+		ret = WS_Dup(sp->ws, reply->str);
 		break;
 	case REDIS_REPLY_ARRAY:
-		ret = strdup("array");
+		ret = WS_Dup(sp->ws, "array");
 		break;
 	default:
-		ret = strdup("unexpected");
+		ret = WS_Dup(sp->ws, "unexpected");
 	}
 
 done:
