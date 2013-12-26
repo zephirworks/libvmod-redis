@@ -21,6 +21,8 @@
 #	define	LOG_T(...) do {} while(0);
 #endif
 
+typedef void (*thread_destructor)(void *);
+
 typedef struct redisConfig {
 	char *host;
 	int port;
@@ -47,7 +49,7 @@ vmod_log(struct sess *sp, const char *fmt, ...)
 static void
 make_key()
 {
-	(void)pthread_key_create(&redis_key, NULL);
+	(void)pthread_key_create(&redis_key, (thread_destructor)redisFree);
 }
 
 static config_t *
